@@ -1,0 +1,134 @@
+
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
+
+#define DHTPIN            3        // Pin which is connected to the DHT sensor.
+
+#define DHTTYPE           DHT11     // DHT 11    
+
+#define LDRpin A1 // analog pin where we connected the LDR and the resistor
+
+//gas sensor
+int smokeA0 = A0;
+// Your threshold value
+int sensorThres = 1100;  
+
+//pir sensor
+int inputPin = 2;               // choose the input pin (for PIR sensor) 
+int pirState = LOW;             // we start, assuming no motion detected
+int val = 0;  
+
+//ldr 
+int LDRValue = 0;   // result of reading the analog pin 
+int pinOut = 4;   //digital pin where the relay / led is connected
+
+
+DHT_Unified dht(DHTPIN, DHTTYPE);
+uint32_t delayMS; 
+
+String temp = ""; 
+  String ldr = ""; 
+  String gas = ""; 
+  String pir = "";
+
+void setup() {
+  // put your setup code here, to run once:  
+  
+  //ldr 
+  while(!Serial)
+  {}
+
+  pinMode(pinOut, OUTPUT);
+  digitalWrite(pinOut, LOW); 
+
+
+  //temp sensor 
+  sensor_t sensor;
+  dht.temperature().getSensor(&sensor);  
+  dht.begin();  
+  delayMS = sensor.min_delay / 1000;
+  
+  //gas sensor
+  pinMode(smokeA0, INPUT); 
+ 
+  //pir sensor
+  pinMode(inputPin, INPUT);     // declare sensor as input  
+  Serial.begin(9600); 
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:  
+
+  //ldr  
+   LDRValue = analogRead(LDRpin); // read the value from the LDR
+        
+  if(LDRValue>50) //there is light then print 1 (change the value of 50 as required)
+    ldr = "1 ; ";
+    //Serial.println(1); //write to the serial monitor which also be read by python
+  else
+    ldr = "0 ; ";
+    //Serial.println(0);  
+
+ 
+
+  //temp sensor 
+  sensors_event_t event;  
+  dht.temperature().getEvent(&event);
+  Serial.print(event.temperature); 
+  Serial.print(" ; "); 
+
+  //pir sensor
+   val = digitalRead(inputPin);  // read input value
+  if (val == HIGH) {            // check if the input is HIGH
+    pir = "Motion detected ; ";
+    //Serial.print("Motion detected ; ");
+  }
+
+    
+    else if (val == LOW) {
+      // we have just turned on
+      pir = "No Motion detected ; ";
+      //Serial.print("No motion detected ; ");  
+  }   
+
+  //gas sensor 
+  int analogSensor = analogRead(smokeA0); 
+
+   if (analogSensor > sensorThres)
+  {
+    gas = "Gas detected ; ";
+    //Serial.print("Gas detected ; ");
+  }
+  else
+  {
+    gas = "No Gas detected ; ";
+    //Serial.print("No Gas detected ; ");
+  } 
+
+  String finalVal = ""; 
+  finalVal.concat(ldr); 
+  finalVal.concat(temp); 
+  finalVal.concat(pir); 
+  finalVal.concat(gas); 
+   finalVal.concat(" ");    
+  Serial.println(finalVal); 
+
+  delay(1000); 
+
+  //led on and off 
+  if(Serial.available())
+    {
+      Serial.print("gonna print");
+      char ch = Serial.read(); //get the value from python code
+      Serial.println(ch); 
+      if(ch==97) 
+      { 
+        digitalWrite(pinOut, HIGH);  //switch on light if 'a' is sent by python code
+         
+      }
+       else if (ch ==98) 
+        digitalWrite(pinOut, LOW); //switch off light if 'b' is sent by python code
+    } 
+}
