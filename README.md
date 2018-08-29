@@ -1,0 +1,2 @@
+# Home-Automation
+My project focuses on combining 3 different systems into one system .It can turn on/off your lights on a click of a button on a webpage .It will also give you real time data using IOT about the temperature of your room you desire ,it would also notify if there is a gas leak ,and with the integration of PIR Sensors you would know if you have some unexpected guests and you could take appropriate measures.
